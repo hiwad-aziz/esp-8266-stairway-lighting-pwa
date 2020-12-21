@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="manifest" href="manifest.json">
+    <script>if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => {
+                        console.log('Registration succeeded. Scope is ' + reg.scope);
+                    })
+                    .catch(registrationError => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        };
+    </script>
+    <title>Stairway Lighting Control</title>
+</head>
+
+<body>
+    <header>
+        <h1>Stairway Lighting</h1>
+    </header>
+
+    <div id="onoff">
+        <img id="onoffimage" src="images/stairs.png" alt="">
+    </div>
+
+    <div>
+        <p class="section-text">Choose a color!</p>
+    </div>
+
+    <div>
+        <input type="color" id="color-picker" value="#ffffff">
+    </div>
+
+    <div>
+        <p class="section-text">Choose a mode!</p>
+    </div>
+
+    <div>
+        <button type="button" class="btn btn-primary" onclick="sendSensingMode();">Sensing Mode</button>
+    </div>
+
+    <div>
+        <button type="button" class="btn btn-primary" onclick="sendSteadyMode();">Steady</button>
+    </div>
+
+    <div>
+        <button type="button" class="btn btn-primary" onclick="sendRainbowMode();">Rainbow</button>
+    </div>
+
+    <div>
+        <button type="button" class="btn btn-primary" onclick="sendRunningRainbowMode();">Running Rainbow</button>
+    </div>
+
+    <div class="range">
+        <input type="range" class="form-range" id="rainbow-velocity" min="0" max="100" step="1"
+            onmouseup="sendVelocity();" ontouchend="sendVelocity();" />
+    </div>
+
+    <div>
+        <button type="button" class="btn btn-primary" onclick="sendTwinkleMode();">Twinkle</button>
+    </div>
+
+    <div>
+        <button type="button" class="btn btn-primary" onclick="sendNightMode();">Night Mode</button>
+    </div>
+
+
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+        integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+        crossorigin="anonymous"></script>
+    <script src="src/app.js"></script>
+</body>
+
+</html>

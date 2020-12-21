@@ -1,0 +1,16 @@
+{
+    "name": "Stairs Lighting",
+    "short_name": "Stairs",
+    "start_url": "/",
+    "background_color": "#222327",
+    "theme_color": "#222327",
+    "display": "standalone",
+    "scope": "/",
+    "icons": [
+        {
+            "src": "images/stairs_icon.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        }
+    ]
+}

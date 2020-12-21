@@ -1,0 +1,89 @@
+@import url('https://fonts.googleapis.com/css2?family=Asap:wght@400;500;700&display=swap');
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Asap, sans-serif;
+}
+
+body {
+    background-color: white;
+}
+
+header {
+    background: cadetblue;
+    padding: 0px 20px;
+}
+
+header > h1 {
+    color: #222327;
+    text-align: center;
+}
+
+#color-picker {
+    position: relative;
+    margin-bottom: 10px;
+    left: 50%;
+    -webkit-transform: translateX(-50%);
+    transform: translateX(-50%);
+    border: none;
+}
+
+.btn {
+    position: relative;
+    margin-bottom: 10px;
+    left: 50%;
+    -webkit-transform: translateX(-50%);
+    transform: translateX(-50%);
+    border: none;
+    background-color: cadetblue;
+    color: #222327;
+}
+
+.section-text {
+    padding: 0px 5px;
+    text-align: center;
+    font-size: 24px;
+    color: #222327;
+    background-color: cadetblue;
+}
+
+.range {
+    text-align: center;
+}
+
+#onoff {
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    margin: 10px 20px;
+    padding: 10px;
+    transition: all 0.3s ease;
+    position: relative;
+    text-align: center;
+}
+
+#onoffimage{
+    border: 4px solid transparent;
+}
+
+#onoffimage:hover {
+    cursor: pointer;
+}
+
+.green-glow {
+    border: 10px solid #4dcc7d;
+    border-radius: 15%;
+    box-shadow: 0 0 20px #31b43a;
+}
+
+.red-glow {
+    border: 10px solid #fc121b;
+    border-radius: 15%;
+    box-shadow: 0 0 20px #d01115;
+}
+
