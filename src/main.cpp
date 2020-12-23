@@ -10,8 +10,8 @@
 
 using namespace globalconstants;
 
-const char *ssid = "FRITZ!Box 7430 CG";
-const char *password = "47634284518786957845";
+const char *ssid = "***";
+const char *password = "***";
 
 // function prototypes for HTTP handlers
 void handleNotFound(AsyncWebServerRequest *request);
@@ -20,7 +20,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
                     size_t length);
 
 // LED, server instances and global variables
-NeoPixelBus<NeoGrbFeature, NeoWs2813Method> leds(NUM_LEDS);
+NeoPixelBus<NeoGrbFeature, NeoEsp8266Dma800KbpsMethod> leds(NUM_LEDS, DATA_PIN);
 AsyncWebServer server(80);
 WebSocketsServer webSocket(81);
 LedFunctions led_fcn(&leds);
