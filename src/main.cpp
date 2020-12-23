@@ -5,13 +5,13 @@
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include <FS.h>
-#include <FastLED.h>
+#include <NeoPixelBus.h>
 #include <WebSocketsServer.h>
 
 using namespace globalconstants;
 
-const char *ssid = "***";
-const char *password = "***";
+const char *ssid = "FRITZ!Box 7430 CG";
+const char *password = "47634284518786957845";
 
 // function prototypes for HTTP handlers
 void handleNotFound(AsyncWebServerRequest *request);
@@ -20,10 +20,10 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
                     size_t length);
 
 // LED, server instances and global variables
-CRGB leds[NUM_LEDS];
+NeoPixelBus<NeoGrbFeature, NeoWs2813Method> leds(NUM_LEDS);
 AsyncWebServer server(80);
 WebSocketsServer webSocket(81);
-LedFunctions led_fcn(leds);
+LedFunctions led_fcn(&leds);
 static int Fkt = 0;
 static bool On = false;
 
@@ -43,6 +43,7 @@ void setup() {
     Serial.print(++i);
     Serial.print(' ');
   }
+  WiFi.setSleepMode(WIFI_NONE_SLEEP);
 
   Serial.println('\n');
   Serial.println("Connection established!");
@@ -63,8 +64,9 @@ void setup() {
     return;
   }
 
-  // FastLED
-  FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
+  // NeoPixel setup
+  leds.Begin();
+  leds.Show();
 
   // Ultrasonic sensors setup
   pinMode(ULTRASONIC_TOP, OUTPUT);
@@ -238,19 +240,19 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
       for (int i = 1; i < length; i++) {
         hue.concat(payload[i]);
       }
-      led_fcn.setHue(hue.toInt());
+      led_fcn.setHue(hue.toFloat());
     } else if (payload[0] == 'S') {
       String sat = "";
       for (int i = 1; i < length; i++) {
         sat.concat(payload[i]);
       }
-      led_fcn.setSat(sat.toInt());
+      led_fcn.setSat(sat.toFloat());
     } else if (payload[0] == 'V') {
       String val = "";
       for (int i = 1; i < length; i++) {
         val.concat(payload[i]);
       }
-      led_fcn.setVal(val.toInt());
+      led_fcn.setVal(val.toFloat());
     }
     break;
   }

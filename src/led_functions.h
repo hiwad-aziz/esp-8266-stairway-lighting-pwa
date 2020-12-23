@@ -3,13 +3,31 @@
 
 #include "config.h"
 #include <Arduino.h>
-#include <FastLED.h>
+#include <NeoPixelBus.h>
 
 using namespace globalconstants;
 
 class LedFunctions {
 private:
-  CRGB *leds;
+  // enum definitions
+  enum class eLedMode : uint8_t {
+    SENSING = 0,
+    STEADY,
+    NIGHT,
+    RAINBOW,
+    RUNRAINBOW,
+    SPARKLE,
+    TWINKLE,
+    FIRE
+  };
+
+  enum class eSensingState : uint8_t {
+    WAITING = 0,
+    TOP_TRIGGERED,
+    BOTTOM_TRIGGERED
+  };
+
+  NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> *leds;
   // timing
   unsigned long millis_yield = 0;
   unsigned long previous_millis = 0;
@@ -17,19 +35,26 @@ private:
   unsigned long previous_millis2 = 0;
   unsigned long previous_micros_top = 0;
   unsigned long previous_micros_bottom = 0;
-  int state = 0;
-  int top_sensor_range = 200;
-  int bottom_sensor_range = 200;
+  // sensors
+  int top_sensor_range = 70;
+  int bottom_sensor_range = 70;
   int trigger_state_top = LOW;
   int trigger_state_bottom = LOW;
   // color
-  int hue = 0;
-  int sat = 0;
-  int val = 255;
-  int vel = 15;
+  HslColor color;
+  bool color_changed = false;
+  int vel = 5;
+  // states
+  eSensingState sensing_state = eSensingState::WAITING;
+  eLedMode previous_mode = eLedMode::SENSING;
 
 public:
-  explicit LedFunctions(CRGB *leds) : leds(leds) {}
+  explicit LedFunctions(NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> *leds)
+      : leds(leds) {
+    color.H = 0.0;
+    color.S = 0.0;
+    color.L = 0.0;
+  }
   void setHue(int hue);
   void setVal(int val);
   void setSat(int sat);

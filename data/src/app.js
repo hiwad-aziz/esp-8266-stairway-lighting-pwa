@@ -59,10 +59,13 @@ function sendHSV() {
   var hex_color = document.getElementById('color-picker').value;
   var rgb_color = hex2rgb(hex_color);
   var hsv_color = rgb2hsv(rgb_color.r, rgb_color.g, rgb_color.b);
+  var h_comp_normalized = hsv_color.h / 360;
+  var s_comp_normalized = hsv_color.s / 100;
+  var v_comp_normalized = hsv_color.v / 100;
   console.log(hsv_color);
-  connection.send('H' + hsv_color.h.toString());
-  connection.send('S' + hsv_color.s.toString());
-  connection.send('V' + hsv_color.v.toString());
+  connection.send('H' + h_comp_normalized.toString());
+  connection.send('S' + s_comp_normalized.toString());
+  connection.send('V' + v_comp_normalized.toString());
 }
 
 // on/off button

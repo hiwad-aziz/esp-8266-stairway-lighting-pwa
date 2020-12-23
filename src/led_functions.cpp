@@ -2,15 +2,26 @@
 #include <Arduino.h>
 #include <FastLED.h>
 
-void LedFunctions::setHue(int hue) { this->hue = hue; }
+void LedFunctions::setHue(int hue) {
+  this->color.H = hue;
+  color_changed = true;
+}
 
-void LedFunctions::setVal(int val) { this->val = val; }
+void LedFunctions::setVal(int val) {
+  this->color.L = val;
+  color_changed = true;
+}
 
-void LedFunctions::setSat(int sat) { this->sat = sat; }
+void LedFunctions::setSat(int sat) {
+  this->color.S = sat;
+  color_changed = true;
+}
 
 void LedFunctions::setVelocity(int vel) { this->vel = vel; }
 
-void LedFunctions::resetState() { this->state = 0; }
+void LedFunctions::resetState() {
+  this->sensing_state = eSensingState::WAITING;
+}
 
 void LedFunctions::sensingmode() {
   top_sensor_range =
@@ -19,6 +30,9 @@ void LedFunctions::sensingmode() {
                                    previous_micros_bottom);
   runTopSensorLogic();
   runBottomSensorLogic();
+
+  if (previous_mode != eLedMode::SENSING)
+    previous_mode = eLedMode::SENSING;
 }
 
 int LedFunctions::readSensor(int const pin, int &trigger_state,
@@ -39,12 +53,14 @@ int LedFunctions::readSensor(int const pin, int &trigger_state,
 
 void LedFunctions::runTopSensorLogic() {
   if ((top_sensor_range <= RANGE_TRIGGER_MAX) &&
-      (top_sensor_range > RANGE_TRIGGER_MIN) && (state == 0)) {
+      (top_sensor_range > RANGE_TRIGGER_MIN) &&
+      (sensing_state == eSensingState::WAITING)) {
     Serial.println("Turning on light from top...");
     turnOnLightFromTop();
   }
   if ((bottom_sensor_range <= RANGE_TRIGGER_MAX) &&
-      (bottom_sensor_range > RANGE_TRIGGER_MIN) && (state == 1)) {
+      (bottom_sensor_range > RANGE_TRIGGER_MIN) &&
+      (sensing_state == eSensingState::TOP_TRIGGERED)) {
     Serial.println("Turning off light from top...");
     turnOffLightFromTop();
   } else if ((millis() - previous_millis) > 35000) {
@@ -54,10 +70,12 @@ void LedFunctions::runTopSensorLogic() {
 }
 
 void LedFunctions::runBottomSensorLogic() {
-  if ((bottom_sensor_range <= RANGE_TRIGGER_MAX) && (state == 0)) {
+  if ((bottom_sensor_range <= RANGE_TRIGGER_MAX) &&
+      (sensing_state == eSensingState::WAITING)) {
     turnOnLightFromBottom();
   }
-  if ((top_sensor_range <= RANGE_TRIGGER_MAX) && (state == 2)) {
+  if ((top_sensor_range <= RANGE_TRIGGER_MAX) &&
+      (sensing_state == eSensingState::BOTTOM_TRIGGERED)) {
     turnOffLightFromBottom();
   } else if ((millis() - previous_millis) > 35000) {
     turnOffLight();
@@ -66,11 +84,12 @@ void LedFunctions::runBottomSensorLogic() {
 
 void LedFunctions::turnOnLightFromTop() {
   previous_millis = millis();
-  state = 1;
-  leds[0].setHSV(hue, sat, 255);
-  leds[1].setHSV(hue, sat, 255);
-  leds[2].setHSV(hue, sat, 255);
-  leds[3].setHSV(hue, sat, 255);
+  sensing_state = eSensingState::TOP_TRIGGERED;
+  leds->SetPixelColor(0, color);
+  leds->SetPixelColor(1, color);
+  leds->SetPixelColor(2, color);
+  leds->SetPixelColor(3, color);
+  leds->Show();
 
   for (int j = 1; j < NUM_STEPS; j++) {
     // s. here why yields are necessary:
@@ -80,10 +99,11 @@ void LedFunctions::turnOnLightFromTop() {
       millis_yield = millis();
     }
     for (int i = 1; i < 256; i = i + vel) {
+      color.L = i / 256.0;
       for (int k = j * NUM_LEDS_PER_STEP; k < NUM_LEDS_PER_STEP * (j + 1);
            k++) {
-        leds[k].setHSV(hue, sat, i);
-        FastLED.show();
+        leds->SetPixelColor(k, color);
+        leds->Show();
       }
     }
   }
@@ -96,35 +116,37 @@ void LedFunctions::turnOffLightFromTop() {
       millis_yield = millis();
     }
     for (int i = 255; i > -1; i = i - vel) {
+      color.L = i / 256.0;
       for (int k = j * NUM_LEDS_PER_STEP; k < NUM_LEDS_PER_STEP * (j + 1);
            k++) {
-        leds[k].setHSV(hue, sat, i);
-        FastLED.show();
+        leds->SetPixelColor(k, color);
+        leds->Show();
       }
     }
   }
-
+  HslColor off(0.0, 0.0, 0.0);
   for (int n = 0; n < NUM_LEDS; n++) {
-    leds[n] = CRGB::Black;
-    FastLED.show();
+    leds->SetPixelColor(n, off);
+    leds->Show();
   }
 
-  state = 0;
+  sensing_state = eSensingState::WAITING;
 }
 
 void LedFunctions::turnOnLightFromBottom() {
   previous_millis = millis();
-  state = 2;
+  sensing_state = eSensingState::BOTTOM_TRIGGERED;
   for (int j = NUM_STEPS; j > 0; j--) {
     if ((millis() - millis_yield) > 1000) {
       yield();
       millis_yield = millis();
     }
     for (int i = 1; i < 256; i = i + vel) {
+      color.L = i / 256.0;
       for (int k = ((j * NUM_LEDS_PER_STEP) - 1);
            k > (((j - 1) * NUM_LEDS_PER_STEP) - 1); k--) {
-        leds[k].setHSV(hue, sat, i);
-        FastLED.show();
+        leds->SetPixelColor(k, color);
+        leds->Show();
       }
     }
   }
@@ -137,56 +159,82 @@ void LedFunctions::turnOffLightFromBottom() {
       millis_yield = millis();
     }
     for (int i = 255; i > -1; i = i - vel) {
+      color.L = i / 256.0;
       for (int k = ((j * NUM_LEDS_PER_STEP) - 1);
            k > (((j - 1) * NUM_LEDS_PER_STEP) - 1); k--) {
-        leds[k].setHSV(hue, sat, i);
-        FastLED.show();
+        leds->SetPixelColor(k, color);
+        leds->Show();
       }
     }
+    HslColor off(0.0, 0.0, 0.0);
+    for (int n = 0; n < NUM_LEDS; n++) {
+      leds->SetPixelColor(n, off);
+      leds->Show();
+    }
+
+    sensing_state = eSensingState::WAITING;
   }
 
+  HslColor off(0.0, 0.0, 0.0);
   for (int n = NUM_LEDS - 1; n > -1; n--) {
-    leds[n] = CRGB::Black;
-    FastLED.show();
+    leds->SetPixelColor(n, off);
+    leds->Show();
   }
 
-  state = 0;
+  sensing_state = eSensingState::WAITING;
 }
 
 void LedFunctions::turnOffLight() {
+  HslColor off(0.0, 0.0, 0.0);
   for (int n = 0; n < NUM_LEDS; n++) {
-    leds[n] = CRGB::Black;
-    FastLED.show();
+    leds->SetPixelColor(n, off);
   }
-  state = 0;
+  leds->Show();
+  sensing_state = eSensingState::WAITING;
 }
 
 void LedFunctions::steadymode() {
-  for (int i = 0; i < NUM_LEDS; i++) {
-    leds[i].setHSV(hue, sat, val);
+  if ((previous_mode != eLedMode::STEADY) && (color_changed == true)) {
+    for (int i = 0; i < NUM_LEDS; i++) {
+      leds->SetPixelColor(i, color);
+    }
+    leds->Show();
+    previous_mode = eLedMode::STEADY;
+    color_changed = false;
   }
-  FastLED.show();
 }
 
 void LedFunctions::nightmode() {
-  for (int i = 0; i < NUM_LEDS; i++) {
-    leds[i].setHSV(0, 0, 64);
+  if (previous_mode != eLedMode::NIGHT) {
+    color.H = 0.0;
+    color.S = 0.0;
+    color.L = 0.25;
+    for (int i = 0; i < NUM_LEDS; i++) {
+      leds->SetPixelColor(i, color);
+    }
+    leds->Show();
+    previous_mode = eLedMode::NIGHT;
   }
-  FastLED.show();
 }
 
 void LedFunctions::rainbowmode() {
-  uint8_t thishue = 0;
-  uint8_t deltahue = 3;
-  thishue = thishue + 1;
-  fill_rainbow(leds, NUM_LEDS, thishue, deltahue);
-  FastLED.show();
-  FastLED.delay(100);
+  if (previous_mode != eLedMode::RAINBOW) {
+    HsbColor rainbow(0.0, 1.0, 0.75);
+    for (int i = 0; i < NUM_LEDS; i++) {
+      // Calc hue such that each color of the rainbow is represented
+      // in the available sum of LEDs
+      rainbow.H = i / NUM_LEDS;
+      leds->SetPixelColor(i, rainbow);
+    }
+    leds->Show();
+    previous_mode = eLedMode::RAINBOW;
+  }
 }
 
 void LedFunctions::rainbowmoderunning() {
   byte *c;
   uint16_t i, j;
+  RgbColor rgb_color;
   for (j = 0; j < 256;) {
     if ((millis() - millis_yield) > 1000) {
       yield();
@@ -195,9 +243,12 @@ void LedFunctions::rainbowmoderunning() {
     if (millis() - previous_millis > vel) {
       for (i = 0; i < NUM_LEDS; i++) {
         c = Wheel(((i * 256 / NUM_LEDS) + j) & 255);
-        leds[i].setRGB(*c, *(c + 1), *(c + 2));
+        rgb_color.R = *c;
+        rgb_color.G = *(c + 1);
+        rgb_color.B = *(c + 2);
+        leds->SetPixelColor(i, rgb_color);
       }
-      FastLED.show();
+      leds->Show();
       j++;
       previous_millis = millis();
     }
@@ -207,39 +258,48 @@ void LedFunctions::rainbowmoderunning() {
 void LedFunctions::sparkle() {
   int count = 10;
   int speeddelay = 100;
+  HslColor off(0.0, 0.0, 0.0);
   for (int n = 0; n < NUM_LEDS; n++) {
-    leds[n] = CRGB::Black;
-    FastLED.show();
+    leds->SetPixelColor(n, off);
+    leds->Show();
   }
   if (millis() - previous_millis2 > speeddelay) {
     for (int i = 0; i < count; i++) {
       if (millis() - previous_millis1 > speeddelay) {
-        leds[random(NUM_LEDS)].setRGB(random(0, 255), random(0, 255),
-                                      random(0, 255));
-        FastLED.show();
+        RgbColor rgb_color(random(0, 255), random(0, 255), random(0, 255));
+        leds->SetPixelColor(random(NUM_LEDS), rgb_color);
+        leds->Show();
         previous_millis1 = millis();
       }
     }
   }
   previous_millis2 = millis();
+  if (previous_mode != eLedMode::SPARKLE)
+    previous_mode = eLedMode::SPARKLE;
 }
 
 void LedFunctions::twinkle() {
   int speeddelay = 0;
+  HslColor off(0.0, 0.0, 0.0);
+  RgbColor rgb_white(255, 255, 255);
   if (millis() - previous_millis > speeddelay) {
-    leds[random(NUM_LEDS)].setRGB(255, 255, 255);
-    FastLED.show();
+    leds->SetPixelColor(random(NUM_LEDS), rgb_white);
+    leds->Show();
   }
   for (int n = 0; n < NUM_LEDS; n++) {
-    leds[n] = CRGB::Black;
-    FastLED.show();
+    leds->SetPixelColor(n, off);
+    leds->Show();
   }
   previous_millis = millis();
+  if (previous_mode != eLedMode::TWINKLE)
+    previous_mode = eLedMode::TWINKLE;
 }
 
 void LedFunctions::fire() {
   if ((millis() - previous_millis) > random(100, 200)) {
     Serial.println(previous_millis);
+    HslColor off(0.0, 0.0, 0.0);
+    RgbColor rgb_fire;
     for (int n = 0; n < NUM_LEDS; n++) {
       int flicker = random(0, 150);
       int r1 = R_FIRE - flicker;
@@ -251,11 +311,17 @@ void LedFunctions::fire() {
         r1 = 0;
       if (b1 < 0)
         b1 = 0;
-      leds[n].setRGB(r1, g1, b1);
+      rgb_fire.R = r1;
+      rgb_fire.G = g1;
+      rgb_fire.B = b1;
+      leds->SetPixelColor(n, off);
     }
-    FastLED.show();
+    leds->Show();
     previous_millis = millis();
   }
+
+  if (previous_mode != eLedMode::FIRE)
+    previous_mode = eLedMode::FIRE;
 }
 
 byte *LedFunctions::Wheel(byte WheelPos) {

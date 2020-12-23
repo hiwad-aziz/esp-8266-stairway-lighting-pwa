@@ -5,7 +5,9 @@ namespace globalconstants {
 int const NUM_LEDS = 52;
 int const NUM_STEPS = 13;
 int const NUM_LEDS_PER_STEP = 4;
-int const DATA_PIN = 3;        // data pin of led strip (D4)
+int const DATA_PIN =
+    3; // changing this will not affect anything since the NeoPixelBus library
+       // always uses GPIO3 due to DMA use on an ESP8266
 int const ULTRASONIC_TOP = 14; // pin of ultrasonic sensor at top of stairs (D5)
 int const ULTRASONIC_BOTTOM =
     12; // pin of ultrasonic sensor at bottom of stairs (D6)
